@@ -39,7 +39,9 @@ class SyntaxAnalyzer:
             if token_type == 'Keyword' and (token_value == 'int' or token_value == 'float' or token_value == 'char' or token_value == 'bool'):
                 self.validate_variable_declaration()
             if token_type == 'Keyword' and token_value == 'printf':
-                self.check_printf_usage()
+                self.check_printf_usage() 
+            if token_type == 'Keyword' and token_value == 'printf':
+                self.check_scanf_usage()
             return token_value
             
         elif token_type == '(':
@@ -120,6 +122,44 @@ class SyntaxAnalyzer:
                 if specifier_count!= identifier_count:
                     raise Exception("Syntax Error: Mismatch in specifier and identifier count.")
                 break
+    
+    def check_scanf_usage(self):
+        # Initialize flags and counters
+        inside_scanf = False
+        after_comma = False
+        identifier_start_with_ampersand = False
+
+        # Iterate through tokens
+        for token_type, token_value in self.tokens:
+            if token_type == 'Keyword' and token_value == 'scanf':
+                # Found the start of a scanf statement
+                inside_scanf = True
+                continue
+            elif token_type == 'Delimiter' and token_value == '(':
+                # Start of arguments
+                continue
+            elif token_type == 'Delimiter' and token_value == ',' and inside_scanf:
+                # Comma inside scanf, reset flags
+                after_comma = True
+                identifier_start_with_ampersand = False
+                continue
+            elif token_type == 'Identifier' and after_comma:
+                # Check if identifier starts with &
+                if token_value.startswith('&'):
+                    identifier_start_with_ampersand = True
+                    after_comma = False  # Reset flag after checking
+                else:
+                    raise Exception("Syntax Error: Identifier after comma must start with '&'.")
+                continue
+            elif token_type == 'Delimiter' and token_value == ')':
+                # End of arguments
+                if not identifier_start_with_ampersand:
+                    raise Exception("Syntax Error: All identifiers after comma must start with '&'.")
+                break
+
+        # Additional checks for trailing commas or other issues
+        if not self.consume(')'):
+            raise Exception("Syntax Error: Missing closing parenthesis.")
 
     
     def check_balanced_parentheses(self):
