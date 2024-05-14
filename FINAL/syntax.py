@@ -38,8 +38,7 @@ class SyntaxAnalyzer:
                 raise Exception(f"Expected a Keyword or Identifier, but got {token_type}")
             if token_type == 'Keyword' and (token_value == 'int' or token_value == 'float' or token_value == 'char' or token_value == 'bool'):
                 self.validate_variable_declaration()
-            if token_type == 'Keyword' and token_value == 'if':
-                self.parse_if_statement()
+        
             return token_value
         elif token_type == '(':
             if not self.consume(token_type):
@@ -80,36 +79,10 @@ class SyntaxAnalyzer:
         if last_token_value!= ';':
             raise Exception("Syntax is invalid. Expected a semicolon at the end.")
         
-    # def parse_if_statement(self):
-    #     self.tokens[self.token_index][0] == 'if':
-    #         self.consume('if')
-    #         if not self.consume('('):
-    #             raise Exception("Expected '(', but got something else.")
-    #         self.parse_condition()  # Parse the condition
-    #         if not self.consume(')'):
-    #             raise Exception("Expected ')', but got something else.")
+ 
         
 
-    def parse_condition(self):
-        # Base case: If the current token is an identifier or an integer, return it as the condition
-        if self.consume('Identifier') or self.consume('Integer'):
-            return self.tokens[self.token_index - 1][1]  # Return the value of the token
-
-        # Recursive case: Parse a condition that includes logical operators
-        left = self.parse_condition()  # Parse the left side of the condition
-
-        # Check for logical operators
-        if self.tokens[self.token_index][0] == '&&':
-            self.consume('&&')
-            right = self.parse_condition()  # Parse the right side of the condition
-            return (left, '&&', right)  # Return the combined condition
-        elif self.tokens[self.token_index][0] == '||':
-            self.consume('||')
-            right = self.parse_condition()  # Parse the right side of the condition
-            return (left, '||', right)  # Return the combined condition
-        else:
-            raise Exception("Expected a logical operator, but got something else.")
-
+    
     def check_balanced_parentheses(self):
         open_paren_count = 0
         open_quot_count = 0
@@ -134,7 +107,7 @@ class SyntaxAnalyzer:
                 open_braces_count += 1
             elif token_type == 'Delimiter' and token_value == '{':
                 open_braces_count -= 1
-            if open_paren_count < 0:
+            if open_paren_count < 0 and open_quot_count < 0 and open_braces_count < 0 and open_bracket_count < 0:
                 raise Exception("Syntax Error: Unbalanced parentheses.")
         if open_paren_count!= 0:
             raise Exception("Syntax Error: Unbalanced parentheses.")
@@ -142,7 +115,9 @@ class SyntaxAnalyzer:
     def parse(self):
         try:
             self.check_balanced_parentheses()  # Check for balanced parentheses
+            self.validate_syntax()
             result = self.parse_expression()
+            
             return result
         except Exception as e:
             print(f"Syntax Error: {e}")
